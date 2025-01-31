@@ -106,6 +106,10 @@ impl<'a, T: Object<'a>> List<'a, T> {
             })),
         }
     }
+
+    pub fn object(self) -> JObject<'a> {
+        self.obj
+    }
 }
 
 impl<'a, T> AsRef<JObject<'a>> for List<'a, T> {

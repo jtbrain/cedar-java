@@ -18,8 +18,13 @@ package com.cedarpolicy.model.schema;
 
 import com.cedarpolicy.loader.LibraryLoader;
 import com.cedarpolicy.model.exception.InternalException;
+import com.cedarpolicy.value.EntityTypeName;
+import com.cedarpolicy.value.EntityUID;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+
+import java.util.List;
 
 import java.util.Optional;
 
@@ -102,6 +107,76 @@ public final class Schema {
     }
 
     /**
+     * Get the Principals defined by the Schema
+     * @return the Principals defined by the Schema
+     * @throws InternalException if parsing fails.
+     * @throws NullPointerException if the input text is null
+     */
+    public List<EntityTypeName> principals() throws InternalException, NullPointerException {
+        if (type == JsonOrCedar.Json) {
+            return getSchemaPrincipalsJsonJni(schemaJson.get().toString());
+        } else {
+            return getSchemaPrincipalsJni(schemaText.get());
+        }
+    }
+
+    /**
+     * Get the Resources defined by the Schema
+     * @return the Resources defined by the Schema
+     * @throws InternalException if parsing fails.
+     * @throws NullPointerException if the input text is null
+     */
+    public List<EntityTypeName> resources() throws InternalException, NullPointerException {
+        if (type == JsonOrCedar.Json) {
+            return getSchemaResourcesJsonJni(schemaJson.get().toString());
+        } else {
+            return getSchemaResourcesJni(schemaText.get());
+        }
+    }
+
+    /**
+     * Get the Principals for a specific Action defined by the Schema
+     * @return the Principals for a specific Action defined by the Schema
+     * @throws InternalException if parsing fails.
+     * @throws NullPointerException if the input text is null
+     */
+    public List<EntityTypeName> principalsForAction(EntityUID action) throws InternalException, NullPointerException {
+        if (type == JsonOrCedar.Json) {
+            return getSchemaPrincipalsForActionJsonJni(schemaJson.get().toString(), action);
+        } else {
+            return getSchemaPrincipalsForActionJni(schemaText.get(), action);
+        }
+    }
+
+    /**
+     * Get the Resources for a specific Action defined by the Schema
+     * @return the Resources for a specific Action defined by the Schema
+     * @throws InternalException if parsing fails.
+     * @throws NullPointerException if the input text is null
+     */
+    public List<EntityTypeName> resourcesForAction(EntityUID action) throws InternalException, NullPointerException {
+        if (type == JsonOrCedar.Json) {
+            return getSchemaResourcesForActionJsonJni(schemaJson.get().toString(), action);
+        } else {
+            return getSchemaResourcesForActionJni(schemaText.get(), action);
+        }
+    }
+
+    /**
+     * Get the Entity Types defined by the Schema
+     * @return the Entity Types defined by the Schema
+     * @throws InternalException if parsing fails.
+     * @throws NullPointerException if the input text is null
+     */
+    public List<EntityTypeName> entityTypes() throws InternalException, NullPointerException {
+        if (type == JsonOrCedar.Json) {
+            return getSchemaEntityTypesJsonJni(schemaJson.get().toString());
+        } else {
+            return getSchemaEntityTypesJni(schemaText.get());
+        }
+    }
+
+    /**
      * Try to parse a string representing a JSON or Cedar schema. If parsing
      * succeeds, return a `Schema`, otherwise raise an exception.
      *
@@ -139,4 +214,36 @@ public final class Schema {
     private static native String parseJsonSchemaJni(String schemaJson) throws InternalException, NullPointerException;
 
     private static native String parseCedarSchemaJni(String schemaText) throws InternalException, NullPointerException;
+
+    private static native List<EntityTypeName> getSchemaPrincipalsJni(String schemaText)
+            throws InternalException, NullPointerException;
+
+    private static native List<EntityTypeName> getSchemaPrincipalsJsonJni(String schemaJsonText)
+            throws InternalException, NullPointerException;
+
+    private static native List<EntityTypeName> getSchemaResourcesJni(String schemaText)
+            throws InternalException, NullPointerException;
+
+    private static native List<EntityTypeName> getSchemaResourcesJsonJni(String schemaJsonText)
+            throws InternalException, NullPointerException;
+
+    private static native List<EntityTypeName> getSchemaPrincipalsForActionJni(String schemaText, EntityUID action)
+            throws InternalException, NullPointerException;
+
+    private static native List<EntityTypeName> getSchemaPrincipalsForActionJsonJni(String schemaJsonText,
+            EntityUID action)
+            throws InternalException, NullPointerException;
+
+    private static native List<EntityTypeName> getSchemaResourcesForActionJni(String schemaText, EntityUID action)
+            throws InternalException, NullPointerException;
+
+    private static native List<EntityTypeName> getSchemaResourcesForActionJsonJni(String schemaJsonText,
+            EntityUID action)
+            throws InternalException, NullPointerException;
+
+    private static native List<EntityTypeName> getSchemaEntityTypesJni(String schemaText)
+            throws InternalException, NullPointerException;
+
+    private static native List<EntityTypeName> getSchemaEntityTypesJsonJni(String schemaJsonText)
+            throws InternalException, NullPointerException;
 }
