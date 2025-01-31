@@ -32,13 +32,13 @@ use serde::{Deserialize, Serialize};
 use serde_json::{from_str, Value};
 use std::{error::Error, str::FromStr, thread};
 
-use crate::objects::JFormatterConfig;
 use crate::{
     answer::Answer,
     jset::Set,
     objects::{JEntityId, JEntityTypeName, JEntityUID, JPolicy, Object},
     utils::raise_npe,
 };
+use crate::{jlist::List, objects::JFormatterConfig};
 
 type Result<T> = std::result::Result<T, Box<dyn Error>>;
 
@@ -236,6 +236,138 @@ fn parse_cedar_schema_internal<'a>(
             Ok(_) => Ok(JValueGen::Object(env.new_string("success")?.into())),
         }
     }
+}
+
+/// Public string-based JSON interface to get a Schema's Actions
+#[jni_fn("com.cedarpolicy.model.schema.Schema")]
+pub fn getActionsJsonJni<'a>(mut env: JNIEnv<'a>, _: JClass, schema_jstr: JString<'a>) -> jvalue {
+    match get_actions_from_cedar_schema_json_internal(&mut env, schema_jstr) {
+        Ok(v) => v.as_jni(),
+        Err(e) => jni_failed(&mut env, e.as_ref()),
+    }
+}
+
+fn get_actions_from_cedar_schema_json_internal<'a>(
+    env: &mut JNIEnv<'a>,
+    schema_jstr: JString<'a>,
+) -> Result<JValueOwned<'a>> {
+    if schema_jstr.is_null() {
+        raise_npe(env)
+    } else {
+        let schema = get_schema_from_cedar_schema_json(env, schema_jstr)?;
+        let actions: Vec<&EntityUid> = schema.actions().collect();
+        get_entity_uids(env, actions)
+    }
+}
+
+/// Public string-based Cedar Schmea interface to get a Schema's Actions
+#[jni_fn("com.cedarpolicy.model.schema.Schema")]
+pub fn getActionsJni<'a>(mut env: JNIEnv<'a>, _: JClass, schema_jstr: JString<'a>) -> jvalue {
+    match get_actions_from_cedar_schema_internal(&mut env, schema_jstr) {
+        Ok(v) => v.as_jni(),
+        Err(e) => jni_failed(&mut env, e.as_ref()),
+    }
+}
+
+fn get_actions_from_cedar_schema_internal<'a>(
+    env: &mut JNIEnv<'a>,
+    schema_jstr: JString<'a>,
+) -> Result<JValueOwned<'a>> {
+    if schema_jstr.is_null() {
+        raise_npe(env)
+    } else {
+        let schema = get_schema_from_cedar_schema_str(env, schema_jstr)?;
+        let actions: Vec<&EntityUid> = schema.actions().collect();
+        get_entity_uids(env, actions)
+    }
+}
+
+/// Public string-based JSON interface to get a Schema's Action groups
+#[jni_fn("com.cedarpolicy.model.schema.Schema")]
+pub fn getActionGroupsJsonJni<'a>(
+    mut env: JNIEnv<'a>,
+    _: JClass,
+    schema_jstr: JString<'a>,
+) -> jvalue {
+    match get_action_groups_from_cedar_schema_json_internal(&mut env, schema_jstr) {
+        Ok(v) => v.as_jni(),
+        Err(e) => jni_failed(&mut env, e.as_ref()),
+    }
+}
+
+fn get_action_groups_from_cedar_schema_json_internal<'a>(
+    env: &mut JNIEnv<'a>,
+    schema_jstr: JString<'a>,
+) -> Result<JValueOwned<'a>> {
+    if schema_jstr.is_null() {
+        raise_npe(env)
+    } else {
+        let schema = get_schema_from_cedar_schema_json(env, schema_jstr)?;
+        let actions: Vec<&EntityUid> = schema.action_groups().collect();
+        get_entity_uids(env, actions)
+    }
+}
+
+/// Public string-based Cedar Schmea interface to get a Schema's Action groups
+#[jni_fn("com.cedarpolicy.model.schema.Schema")]
+pub fn getActionGroupsJni<'a>(mut env: JNIEnv<'a>, _: JClass, schema_jstr: JString<'a>) -> jvalue {
+    match get_action_groups_from_cedar_schema_internal(&mut env, schema_jstr) {
+        Ok(v) => v.as_jni(),
+        Err(e) => jni_failed(&mut env, e.as_ref()),
+    }
+}
+
+fn get_action_groups_from_cedar_schema_internal<'a>(
+    env: &mut JNIEnv<'a>,
+    schema_jstr: JString<'a>,
+) -> Result<JValueOwned<'a>> {
+    if schema_jstr.is_null() {
+        raise_npe(env)
+    } else {
+        let schema = get_schema_from_cedar_schema_str(env, schema_jstr)?;
+        let actions: Vec<&EntityUid> = schema.action_groups().collect();
+        get_entity_uids(env, actions)
+    }
+}
+
+fn get_entity_uids<'a>(
+    env: &mut JNIEnv<'a>,
+    entity_uids: Vec<&EntityUid>,
+) -> Result<JValueOwned<'a>> {
+    let mut entity_uid_java = List::new(env)?;
+
+    for entity_uid in entity_uids {
+        let java_entity_uid = JEntityUID::try_from(env, entity_uid)?;
+        entity_uid_java.add(env, java_entity_uid)?;
+    }
+
+    Ok(JValueGen::from(entity_uid_java.object()))
+}
+
+fn get_schema_from_cedar_schema_str<'a>(
+    env: &mut JNIEnv<'a>,
+    schema_jstr: JString<'a>,
+) -> Result<Schema> {
+    let schema_jstring = env.get_string(&schema_jstr)?;
+    let schema_string = String::from(schema_jstring);
+    let schema = match Schema::from_cedarschema_str(&schema_string) {
+        Err(e) => return Err(Box::new(e)),
+        Ok(schema) => schema,
+    };
+    Ok(schema.0)
+}
+
+fn get_schema_from_cedar_schema_json<'a>(
+    env: &mut JNIEnv<'a>,
+    schema_jstr: JString<'a>,
+) -> Result<Schema> {
+    let schema_jstring = env.get_string(&schema_jstr)?;
+    let schema_string = String::from(schema_jstring);
+    let schema = match Schema::from_json_str(&schema_string) {
+        Err(e) => return Err(Box::new(e)),
+        Ok(schema) => schema,
+    };
+    Ok(schema)
 }
 
 #[jni_fn("com.cedarpolicy.model.policy.Policy")]

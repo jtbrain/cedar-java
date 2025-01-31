@@ -18,9 +18,12 @@ package com.cedarpolicy.model.schema;
 
 import com.cedarpolicy.loader.LibraryLoader;
 import com.cedarpolicy.model.exception.InternalException;
+import com.cedarpolicy.value.EntityUID;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import java.util.List;
 import java.util.Optional;
 
 /** Represents a schema. */
@@ -102,6 +105,34 @@ public final class Schema {
     }
 
     /**
+     * Get the Actions defined by the Schema
+     * @return the Actions defined by the Schema
+     * @throws InternalException if parsing fails.
+     * @throws NullPointerException if the input text is null
+     */
+    public List<EntityUID> actions() throws InternalException, NullPointerException {
+        if (type == JsonOrCedar.Json) {
+            return getActionsJsonJni(schemaJson.get().toString());
+        } else {
+            return getActionsJni(schemaText.get());
+        }
+    }
+
+    /**
+     * Get the Action Groups defined by the Schema
+     * @return the Action Groups defined by the Schema
+     * @throws InternalException if parsing fails.
+     * @throws NullPointerException if the input text is null
+     */
+    public List<EntityUID> actionGroups() throws InternalException, NullPointerException {
+        if (type == JsonOrCedar.Json) {
+            return getActionGroupsJsonJni(schemaJson.get().toString());
+        } else {
+            return getActionGroupsJni(schemaText.get());
+        }
+    }
+
+    /**
      * Try to parse a string representing a JSON or Cedar schema. If parsing
      * succeeds, return a `Schema`, otherwise raise an exception.
      *
@@ -139,4 +170,16 @@ public final class Schema {
     private static native String parseJsonSchemaJni(String schemaJson) throws InternalException, NullPointerException;
 
     private static native String parseCedarSchemaJni(String schemaText) throws InternalException, NullPointerException;
+
+    private static native List<EntityUID> getActionsJni(String schemaText)
+            throws InternalException, NullPointerException;
+
+    private static native List<EntityUID> getActionsJsonJni(String schemaText)
+            throws InternalException, NullPointerException;
+
+    private static native List<EntityUID> getActionGroupsJni(String schemaText)
+            throws InternalException, NullPointerException;
+
+    private static native List<EntityUID> getActionGroupsJsonJni(String schemaText)
+            throws InternalException, NullPointerException;
 }

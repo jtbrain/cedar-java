@@ -16,13 +16,19 @@
 
 package com.cedarpolicy;
 
+import java.util.Collections;
+import java.util.List;
+
 import com.cedarpolicy.model.schema.Schema;
 import com.cedarpolicy.model.schema.Schema.JsonOrCedar;
+import com.cedarpolicy.value.EntityTypeName;
+import com.cedarpolicy.value.EntityUID;
 
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class SchemaTests {
     @Test
@@ -106,5 +112,83 @@ public class SchemaTests {
                     """);
             Schema.parse(JsonOrCedar.Cedar, "namspace Foo::Bar;");
         });
+    }
+
+    @Test
+    public void getSchemaActionsCedarSchemaTests() {
+        Schema schema = new Schema("""
+                entity User = {
+                    name: String,
+                    age?: Long,
+                };
+                entity Photo in Album;
+                entity Album;
+                action specificActionGroup;
+                action view
+                    in [specificActionGroup]
+                    appliesTo { principal: [User], resource: [Album] };
+                """);
+
+        // verify the actions
+        List<EntityUID> actions = assertDoesNotThrow(() -> {
+            return schema.actions();
+        });
+
+        assertEquals(2, actions.size());
+        EntityTypeName expectedActionType = EntityTypeName.parse("Action").get();
+        EntityUID expectedActionView = new EntityUID(expectedActionType, "view");
+        EntityUID expectedActionSpecificGroup = new EntityUID(expectedActionType, "specificActionGroup");
+        assertEquals(1, Collections.frequency(actions, expectedActionView));
+        assertEquals(1, Collections.frequency(actions, expectedActionSpecificGroup));
+
+        // verify the action groups
+        List<EntityUID> actionGroups = assertDoesNotThrow(() -> {
+            return schema.actionGroups();
+        });
+
+        assertEquals(1, actionGroups.size());
+        assertEquals(expectedActionSpecificGroup, actionGroups.get(0));
+
+        Schema multiPrincipalSchema = new Schema("""
+                entity User = {
+                    name: String,
+                    age?: Long,
+                };
+                entity Admin = {
+                    id: String,
+                };
+                entity Photo in Album;
+                entity Album;
+                action specificActionGroup;
+                action allActionGroup;
+                action edit
+                    in [allActionGroup]
+                    appliesTo { principal: [User], resource: [Album] };
+                action view
+                    in [specificActionGroup, allActionGroup]
+                    appliesTo { principal: [User, Admin], resource: [Album, Photo] };
+                """);
+
+        // verify the actions
+        actions = assertDoesNotThrow(() -> {
+            return multiPrincipalSchema.actions();
+        });
+
+        assertEquals(4, actions.size());
+        EntityUID expectedActionEdit = new EntityUID(expectedActionType, "edit");
+        EntityUID expectedActionAllActionGroup = new EntityUID(expectedActionType, "allActionGroup");
+        assertEquals(1, Collections.frequency(actions, expectedActionView));
+        assertEquals(1, Collections.frequency(actions, expectedActionEdit));
+        assertEquals(1, Collections.frequency(actions, expectedActionSpecificGroup));
+        assertEquals(1, Collections.frequency(actions, expectedActionAllActionGroup));
+
+        // verify the action groups
+        actionGroups = assertDoesNotThrow(() -> {
+            return multiPrincipalSchema.actionGroups();
+        });
+
+        assertEquals(2, actionGroups.size());
+        assertEquals(1, Collections.frequency(actionGroups, expectedActionSpecificGroup));
+        assertEquals(1, Collections.frequency(actionGroups, expectedActionAllActionGroup));
     }
 }

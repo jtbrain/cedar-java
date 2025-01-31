@@ -314,6 +314,14 @@ impl<'a> JEntityUID<'a> {
             Err(_) => JOptional::empty(env),
         }
     }
+
+    /// Given a rust EntityTypeName, allocate a new Java EntityTypeName object
+    pub fn try_from(env: &mut JNIEnv<'a>, etype: &EntityUid) -> Result<Self> {
+        let j_entity_type_name = JEntityTypeName::try_from(env, etype.type_name())?;
+        let j_entity_id = JEntityId::try_from(env, etype.id())?;
+
+        JEntityUID::new(env, j_entity_type_name, j_entity_id)
+    }
 }
 
 impl<'a> Object<'a> for JEntityUID<'a> {
