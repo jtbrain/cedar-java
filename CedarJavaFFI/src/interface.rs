@@ -997,4 +997,109 @@ mod interface_tests {
             policy_effect_test_util(&mut env, "forbid(principal,action,resource);", "forbid");
         }
     }
+
+    mod schema_tests {
+        use super::*;
+
+        const SCHEMA_STRING: &str = r##"entity User = {
+                    name: String,
+                    age?: Long,
+                };
+                entity Photo in Album;
+                entity Album;
+                action view
+                    appliesTo { principal: [User], resource: [Album] };"##;
+
+        const SCHEMA_JSON_STRING: &str = r##"{
+                "": {
+                    "entityTypes": {
+                        "User": {
+                            "shape": {
+                                "type": "Record",
+                                "attributes": {
+                                    "name": {
+                                        "type": "String",
+                                        "required": true
+                                    },
+                                    "age": {
+                                        "type": "Long",
+                                        "required": false
+                                    }
+                                }
+                            }
+                        },
+                        "Photo": {
+                            "memberOfTypes": [ "Album" ]
+                        },
+                        "Album": {}
+                    },
+                    "actions": {
+                        "view": {
+                            "appliesTo": {
+                                "principalTypes": ["User"],
+                                "resourceTypes": ["Album"]
+                            }
+                        }
+                    }
+                }
+            }"##;
+
+        fn schema_jstr<'a>(env: &mut JNIEnv<'a>) -> Result<JString<'a>> {
+            let schema_json_jstr = env.new_string(SCHEMA_STRING)?;
+            Ok(schema_json_jstr)
+        }
+
+        fn schema_json_jstr<'a>(env: &mut JNIEnv<'a>) -> Result<JString<'a>> {
+            let schema_json_jstr = env.new_string(SCHEMA_JSON_STRING)?;
+            Ok(schema_json_jstr)
+        }
+
+        #[test]
+        fn get_schema_from_cedar_schema_json_string_test() {
+            let mut env = JVM.attach_current_thread().unwrap();
+            let schema_str = schema_json_jstr(&mut env).unwrap();
+            let schema = get_schema_from_cedar_schema_json(&mut env, schema_str).unwrap();
+
+            let principals = schema.principals().collect::<Vec<&EntityTypeName>>();
+            assert_eq!(principals.len(), 1);
+            let principal = principals.first().unwrap();
+            assert_eq!(principal.namespace(), "");
+            assert_eq!(principal.basename(), "User");
+
+            let resources = schema.resources().collect::<Vec<&EntityTypeName>>();
+            assert_eq!(principals.len(), 1);
+            let resource = resources.first().unwrap();
+            assert_eq!(resource.namespace(), "");
+            assert_eq!(resource.basename(), "Album");
+
+            let actions = schema.actions().collect::<Vec<&EntityUid>>();
+            assert_eq!(actions.len(), 1);
+            let action = actions.first().unwrap();
+            assert_eq!(action.id().escaped().to_string(), "view");
+        }
+
+        #[test]
+        fn get_schema_from_cedar_schema_string_test() {
+            let mut env = JVM.attach_current_thread().unwrap();
+            let schema_str = schema_jstr(&mut env).unwrap();
+            let schema = get_schema_from_cedar_schema_str(&mut env, schema_str).unwrap();
+
+            let principals = schema.principals().collect::<Vec<&EntityTypeName>>();
+            assert_eq!(principals.len(), 1);
+            let principal = principals.first().unwrap();
+            assert_eq!(principal.namespace(), "");
+            assert_eq!(principal.basename(), "User");
+
+            let resources = schema.resources().collect::<Vec<&EntityTypeName>>();
+            assert_eq!(principals.len(), 1);
+            let resource = resources.first().unwrap();
+            assert_eq!(resource.namespace(), "");
+            assert_eq!(resource.basename(), "Album");
+
+            let actions = schema.actions().collect::<Vec<&EntityUid>>();
+            assert_eq!(actions.len(), 1);
+            let action = actions.first().unwrap();
+            assert_eq!(action.id().escaped().to_string(), "view");
+        }
+    }
 }

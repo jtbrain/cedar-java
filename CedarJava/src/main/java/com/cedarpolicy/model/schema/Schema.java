@@ -112,21 +112,21 @@ public final class Schema {
      * @throws InternalException if parsing fails.
      * @throws NullPointerException if the input text is null
      */
-    public List<EntityTypeName> principals() throws InternalException, NullPointerException {
+    public Iterable<EntityTypeName> principals() throws InternalException, NullPointerException {
         if (type == JsonOrCedar.Json) {
             return getSchemaPrincipalsJsonJni(schemaJson.get().toString());
         } else {
             return getSchemaPrincipalsJni(schemaText.get());
         }
     }
-
+    
     /**
      * Get the Resources defined by the Schema
      * @return the Resources defined by the Schema
      * @throws InternalException if parsing fails.
      * @throws NullPointerException if the input text is null
      */
-    public List<EntityTypeName> resources() throws InternalException, NullPointerException {
+    public Iterable<EntityTypeName> resources() throws InternalException, NullPointerException {
         if (type == JsonOrCedar.Json) {
             return getSchemaResourcesJsonJni(schemaJson.get().toString());
         } else {
@@ -140,7 +140,7 @@ public final class Schema {
      * @throws InternalException if parsing fails.
      * @throws NullPointerException if the input text is null
      */
-    public List<EntityTypeName> principalsForAction(EntityUID action) throws InternalException, NullPointerException {
+    public Iterable<EntityTypeName> principalsForAction(EntityUID action) throws InternalException, NullPointerException {
         if (type == JsonOrCedar.Json) {
             return getSchemaPrincipalsForActionJsonJni(schemaJson.get().toString(), action);
         } else {
@@ -154,7 +154,7 @@ public final class Schema {
      * @throws InternalException if parsing fails.
      * @throws NullPointerException if the input text is null
      */
-    public List<EntityTypeName> resourcesForAction(EntityUID action) throws InternalException, NullPointerException {
+    public Iterable<EntityTypeName> resourcesForAction(EntityUID action) throws InternalException, NullPointerException {
         if (type == JsonOrCedar.Json) {
             return getSchemaResourcesForActionJsonJni(schemaJson.get().toString(), action);
         } else {
@@ -168,7 +168,7 @@ public final class Schema {
      * @throws InternalException if parsing fails.
      * @throws NullPointerException if the input text is null
      */
-    public List<EntityTypeName> entityTypes() throws InternalException, NullPointerException {
+    public Iterable<EntityTypeName> entityTypes() throws InternalException, NullPointerException {
         if (type == JsonOrCedar.Json) {
             return getSchemaEntityTypesJsonJni(schemaJson.get().toString());
         } else {
