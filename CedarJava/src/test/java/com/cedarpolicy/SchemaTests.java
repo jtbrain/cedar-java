@@ -17,7 +17,7 @@
 package com.cedarpolicy;
 
 import java.util.Collections;
-import java.util.List;
+import java.util.ArrayList;
 
 import com.cedarpolicy.model.schema.Schema;
 import com.cedarpolicy.model.schema.Schema.JsonOrCedar;
@@ -130,25 +130,35 @@ public class SchemaTests {
                 """);
 
         // verify the actions
-        List<EntityUID> actions = assertDoesNotThrow(() -> {
+        Iterable<EntityUID> actionsIterable = assertDoesNotThrow(() -> {
             return schema.actions();
         });
 
-        assertEquals(2, actions.size());
+        ArrayList<EntityUID> actions = new ArrayList();
+        actionsIterable.forEach(actions::add);
+
         EntityTypeName expectedActionType = EntityTypeName.parse("Action").get();
         EntityUID expectedActionView = new EntityUID(expectedActionType, "view");
         EntityUID expectedActionSpecificGroup = new EntityUID(expectedActionType, "specificActionGroup");
+
+        assertEquals(2, actions.size());
         assertEquals(1, Collections.frequency(actions, expectedActionView));
         assertEquals(1, Collections.frequency(actions, expectedActionSpecificGroup));
 
         // verify the action groups
-        List<EntityUID> actionGroups = assertDoesNotThrow(() -> {
+        Iterable<EntityUID> actionGroupsIterable = assertDoesNotThrow(() -> {
             return schema.actionGroups();
         });
 
+        ArrayList<EntityUID> actionGroups = new ArrayList();
+        actionGroupsIterable.forEach(actionGroups::add);
+
         assertEquals(1, actionGroups.size());
         assertEquals(expectedActionSpecificGroup, actionGroups.get(0));
+    }
 
+    @Test
+    public void getSchemaActionsMultiActionCedarSchemaTests() {
         Schema multiPrincipalSchema = new Schema("""
                 entity User = {
                     name: String,
@@ -170,22 +180,211 @@ public class SchemaTests {
                 """);
 
         // verify the actions
-        actions = assertDoesNotThrow(() -> {
+        Iterable<EntityUID> actionsIterable = assertDoesNotThrow(() -> {
             return multiPrincipalSchema.actions();
         });
 
-        assertEquals(4, actions.size());
+        ArrayList<EntityUID> actions = new ArrayList();
+        actionsIterable.forEach(actions::add);
+
+        EntityTypeName expectedActionType = EntityTypeName.parse("Action").get();
+        EntityUID expectedActionView = new EntityUID(expectedActionType, "view");
         EntityUID expectedActionEdit = new EntityUID(expectedActionType, "edit");
+        EntityUID expectedActionSpecificGroup = new EntityUID(expectedActionType, "specificActionGroup");
         EntityUID expectedActionAllActionGroup = new EntityUID(expectedActionType, "allActionGroup");
+
+        assertEquals(4, actions.size());
         assertEquals(1, Collections.frequency(actions, expectedActionView));
         assertEquals(1, Collections.frequency(actions, expectedActionEdit));
         assertEquals(1, Collections.frequency(actions, expectedActionSpecificGroup));
         assertEquals(1, Collections.frequency(actions, expectedActionAllActionGroup));
 
         // verify the action groups
-        actionGroups = assertDoesNotThrow(() -> {
+        Iterable<EntityUID> actionGroupsIterable = assertDoesNotThrow(() -> {
             return multiPrincipalSchema.actionGroups();
         });
+
+        ArrayList<EntityUID> actionGroups = new ArrayList();
+        actionGroupsIterable.forEach(actionGroups::add);
+
+        assertEquals(2, actionGroups.size());
+        assertEquals(1, Collections.frequency(actionGroups, expectedActionSpecificGroup));
+        assertEquals(1, Collections.frequency(actionGroups, expectedActionAllActionGroup));
+    }
+
+    @Test
+    public void getSchemaActionsSchemaJsonTests() {
+        Schema schema = assertDoesNotThrow(() -> {
+            return Schema.parse(JsonOrCedar.Json, """
+                {
+                    "": {
+                        "entityTypes": {
+                            "User": {
+                                "shape": {
+                                    "type": "Record",
+                                    "attributes": {
+                                        "name": {
+                                            "type": "String",
+                                            "required": true
+                                        },
+                                        "age": {
+                                            "type": "Long",
+                                            "required": false
+                                        }
+                                    }
+                                }
+                            },
+                            "Photo": {
+                                "memberOfTypes": [ "Album" ]
+                            },
+                            "Album": {}
+                        },
+                        "actions": {
+                            "specificActionGroup": {},
+                            "view": {
+                                "memberOf": [
+                                    {
+                                        "id": "specificActionGroup"
+                                    }
+                                ],
+                                "appliesTo": {
+                                    "principalTypes": ["User"],
+                                    "resourceTypes": ["Album"]
+                                }
+                            }
+                        }
+                    }
+                }
+                """);
+            });
+
+        // verify the actions
+        Iterable<EntityUID> actionsIterable = assertDoesNotThrow(() -> {
+            return schema.actions();
+        });
+
+        ArrayList<EntityUID> actions = new ArrayList();
+        actionsIterable.forEach(actions::add);
+
+        EntityTypeName expectedActionType = EntityTypeName.parse("Action").get();
+        EntityUID expectedActionView = new EntityUID(expectedActionType, "view");
+        EntityUID expectedActionSpecificGroup = new EntityUID(expectedActionType, "specificActionGroup");
+
+        assertEquals(2, actions.size());
+        assertEquals(1, Collections.frequency(actions, expectedActionView));
+        assertEquals(1, Collections.frequency(actions, expectedActionSpecificGroup));
+
+        // verify the action groups
+        Iterable<EntityUID> actionGroupsIterable = assertDoesNotThrow(() -> {
+            return schema.actionGroups();
+        });
+
+        ArrayList<EntityUID> actionGroups = new ArrayList();
+        actionGroupsIterable.forEach(actionGroups::add);
+
+        assertEquals(1, actionGroups.size());
+        assertEquals(expectedActionSpecificGroup, actionGroups.get(0));
+    }
+
+    @Test
+    public void getSchemaActionsMultiActionSchemaJsonTests() {
+        Schema multiActionSchema = assertDoesNotThrow(() -> {
+            return Schema.parse(JsonOrCedar.Json, """
+                {
+                    "": {
+                        "entityTypes": {
+                            "User": {
+                                "shape": {
+                                    "type": "Record",
+                                    "attributes": {
+                                        "name": {
+                                            "type": "String",
+                                            "required": true
+                                        },
+                                        "age": {
+                                            "type": "Long",
+                                            "required": false
+                                        }
+                                    }
+                                }
+                            },
+                            "Admin": {
+                                "shape": {
+                                    "type": "Record",
+                                    "attributes": {
+                                        "id": {
+                                            "type": "String",
+                                            "required": true
+                                        }
+                                    }
+                                }
+                            },
+                            "Photo": {
+                                "memberOfTypes": [ "Album" ]
+                            },
+                            "Album": {}
+                        },
+                        "actions": {
+                            "specificActionGroup": {},
+                            "allActionGroup": {},
+                            "edit": {
+                                "appliesTo": {
+                                    "principalTypes": ["User"],
+                                    "resourceTypes": ["Album"]
+                                },
+                                "memberOf": [
+                                    {
+                                        "id": "specificActionGroup"
+                                    }
+                                ]
+                            },
+                            "view": {
+                                "appliesTo": {
+                                    "principalTypes": ["User", "Admin"],
+                                    "resourceTypes": ["Album", "Photo"]
+                                },
+                                "memberOf": [
+                                    {
+                                        "id": "specificActionGroup"
+                                    },
+                                    {
+                                        "id": "allActionGroup"
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                }
+                """);
+        });
+
+        // verify the actions
+        Iterable<EntityUID> actionsIterable = assertDoesNotThrow(() -> {
+            return multiActionSchema.actions();
+        });
+
+        ArrayList<EntityUID> actions = new ArrayList();
+        actionsIterable.forEach(actions::add);
+
+        EntityTypeName expectedActionType = EntityTypeName.parse("Action").get();
+        EntityUID expectedActionView = new EntityUID(expectedActionType, "view");
+        EntityUID expectedActionEdit = new EntityUID(expectedActionType, "edit");
+        EntityUID expectedActionSpecificGroup = new EntityUID(expectedActionType, "specificActionGroup");
+        EntityUID expectedActionAllActionGroup = new EntityUID(expectedActionType, "allActionGroup");
+
+        assertEquals(4, actions.size());
+        assertEquals(1, Collections.frequency(actions, expectedActionView));
+        assertEquals(1, Collections.frequency(actions, expectedActionEdit));
+        assertEquals(1, Collections.frequency(actions, expectedActionSpecificGroup));
+        assertEquals(1, Collections.frequency(actions, expectedActionAllActionGroup));
+
+        // verify the action groups
+        Iterable<EntityUID> actionGroupsIterable = assertDoesNotThrow(() -> {
+            return multiActionSchema.actionGroups();
+        });
+
+        ArrayList<EntityUID> actionGroups = new ArrayList();
+        actionGroupsIterable.forEach(actionGroups::add);
 
         assertEquals(2, actionGroups.size());
         assertEquals(1, Collections.frequency(actionGroups, expectedActionSpecificGroup));
